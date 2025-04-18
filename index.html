@@ -46,6 +46,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px;
+            position: relative;
         }
         
         .logo {
@@ -54,6 +55,7 @@
             color: #4CAF50;
             text-decoration: none;
             transition: all 0.3s ease;
+            z-index: 1001;
         }
         
         .logo:hover {
@@ -76,6 +78,7 @@
             font-weight: 500;
             transition: color 0.3s;
             padding: 5px 0;
+            display: block;
         }
         
         .nav-menu a:hover {
@@ -96,7 +99,63 @@
         .nav-menu a:hover:after {
             width: 100%;
         }
+
+        /* Гамбургер-меню */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            width: 30px;
+            height: 24px;
+            position: relative;
+            z-index: 1001;
+        }
         
+        .hamburger span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: #4CAF50;
+            border-radius: 3px;
+            opacity: 1;
+            left: 0;
+            transform: rotate(0deg);
+            transition: .25s ease-in-out;
+        }
+        
+        .hamburger span:nth-child(1) {
+            top: 0;
+        }
+        
+        .hamburger span:nth-child(2),
+        .hamburger span:nth-child(3) {
+            top: 10px;
+        }
+        
+        .hamburger span:nth-child(4) {
+            top: 20px;
+        }
+        
+        .hamburger.open span:nth-child(1) {
+            top: 10px;
+            width: 0%;
+            left: 50%;
+        }
+        
+        .hamburger.open span:nth-child(2) {
+            transform: rotate(45deg);
+        }
+        
+        .hamburger.open span:nth-child(3) {
+            transform: rotate(-45deg);
+        }
+        
+        .hamburger.open span:nth-child(4) {
+            top: 10px;
+            width: 0%;
+            left: 50%;
+        }
+
         /* Общие стили для всех экранов */
         .screen {
             min-height: 100vh;
@@ -342,21 +401,47 @@
             h2 { font-size: 1.8rem; }
             
             .header-container {
-                flex-direction: column;
-                padding: 10px;
+                flex-direction: row;
+                padding: 10px 15px;
             }
             
-            .logo {
-                margin-bottom: 10px;
+            .hamburger {
+                display: block;
             }
             
             .nav-menu {
-                flex-wrap: wrap;
+                position: fixed;
+                top: 0;
+                left: -100%;
+                width: 80%;
+                height: 100vh;
+                background: white;
+                flex-direction: column;
                 justify-content: center;
+                align-items: center;
+                transition: all 0.5s ease;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+                padding-top: 80px;
+            }
+            
+            .nav-menu.active {
+                left: 0;
             }
             
             .nav-menu li {
-                margin: 0 10px 5px;
+                margin: 15px 0 !important;
+                width: 100%;
+                text-align: center;
+            }
+            
+            .nav-menu a {
+                padding: 10px;
+                font-size: 1.2rem;
+                width: 100%;
+            }
+
+            .nav-menu a:after {
+                display: none;
             }
 
             .nav-dots {
@@ -388,6 +473,10 @@
             .screen {
                 padding: 100px 10px 60px;
             }
+
+            .nav-menu {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -396,6 +485,15 @@
     <header id="main-header">
         <div class="header-container">
             <a href="#screen1" class="logo">ProService</a>
+            
+            <!-- Гамбургер-меню -->
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            
             <ul class="nav-menu">
                 <li><a href="#screen1">Главная</a></li>
                 <li><a href="#screen2">О нас</a></li>
@@ -526,10 +624,36 @@
             const animateElements = document.querySelectorAll('.animate');
             const dots = document.querySelectorAll('.dot');
             const headerHeight = header.offsetHeight;
+            const hamburger = document.querySelector('.hamburger');
+            const navMenu = document.querySelector('.nav-menu');
+            
+            // Гамбургер-меню
+            hamburger.addEventListener('click', function() {
+                this.classList.toggle('open');
+                navMenu.classList.toggle('active');
+                
+                // Блокировка скролла при открытом меню
+                if (navMenu.classList.contains('active')) {
+                    document.body.style.overflow = 'hidden';
+                } else {
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // Закрытие меню при клике на ссылку
+            document.querySelectorAll('.nav-menu a').forEach(link => {
+                link.addEventListener('click', function() {
+                    hamburger.classList.remove('open');
+                    navMenu.classList.remove('active');
+                    document.body.style.overflow = '';
+                });
+            });
             
             // Прокрутка с учетом шапки
             document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 anchor.addEventListener('click', function(e) {
+                    if (this.getAttribute('href') === '#') return;
+                    
                     e.preventDefault();
                     const target = document.querySelector(this.getAttribute('href'));
                     const targetPosition = target.offsetTop - headerHeight + 1;
@@ -538,12 +662,6 @@
                         top: targetPosition,
                         behavior: 'smooth'
                     });
-                    
-                    // Закрытие мобильного меню, если есть
-                    if (window.innerWidth <= 768) {
-                        document.querySelector('.mobile-menu-btn')?.classList.remove('active');
-                        document.querySelector('.nav-menu')?.classList.remove('active');
-                    }
                 });
             });
             
@@ -704,58 +822,6 @@
                     });
                 });
             });
-            
-            // Адаптивное меню для мобильных
-            if (window.innerWidth <= 768) {
-                const menuBtn = document.createElement('div');
-                menuBtn.className = 'mobile-menu-btn';
-                menuBtn.innerHTML = '☰';
-                document.querySelector('.header-container').appendChild(menuBtn);
-                
-                menuBtn.addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    document.querySelector('.nav-menu').classList.toggle('active');
-                });
-                
-                // Добавляем стили для мобильного меню
-                const style = document.createElement('style');
-                style.textContent = `
-                    .mobile-menu-btn {
-                        display: block;
-                        font-size: 24px;
-                        cursor: pointer;
-                        padding: 10px;
-                        position: absolute;
-                        right: 10px;
-                        top: 10px;
-                        z-index: 1001;
-                    }
-                    .nav-menu {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100vh;
-                        background: white;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: center;
-                        transform: translateY(-100%);
-                        transition: transform 0.3s ease;
-                        padding-top: 60px;
-                    }
-                    .nav-menu.active {
-                        transform: translateY(0);
-                    }
-                    .nav-menu li {
-                        margin: 15px 0 !important;
-                    }
-                    .nav-menu a {
-                        font-size: 1.2rem;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
         });
     </script>
 </body>
